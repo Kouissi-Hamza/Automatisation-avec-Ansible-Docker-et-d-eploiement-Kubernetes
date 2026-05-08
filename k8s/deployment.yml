@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: automatisation-app
+  labels:
+    app: automatisation-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: automatisation-app
+  template:
+    metadata:
+      labels:
+        app: automatisation-app
+    spec:
+      containers:
+        - name: automatisation-app
+          image: p4vl1n/automatisation_avec_ansible:v1
+          ports:
+            - containerPort: 8080
