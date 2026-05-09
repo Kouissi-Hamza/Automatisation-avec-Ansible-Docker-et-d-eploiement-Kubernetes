@@ -1,34 +1,44 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: maven-app-deployment
+  name: automatisation-app
   labels:
-    app: maven-app
+    app: automatisation-app
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: maven-app
+      app: automatisation-app
   template:
     metadata:
       labels:
-        app: maven-app
+        app: automatisation-app
     spec:
       containers:
-      - name: maven-app
-        image: p4vl1n/automatisation_avec_ansible:v1
-        ports:
-        - containerPort: 8080
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: automatisation-app
+          image: p4vl1n/automatisation_avec_ansible:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
 

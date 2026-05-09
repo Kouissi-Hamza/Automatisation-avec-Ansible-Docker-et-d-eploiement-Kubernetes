@@ -1,13 +1,48 @@
----
-- name: Deploy Maven App to Kubernetes
+- name: Deploy application to Kubernetes
   hosts: localhost
   connection: local
+  gather_facts: false
+  vars:
+    k8s_manifests:
+      - k8s/deployment.yml
+      - k8s/service.yml
+
   tasks:
-    - name: Apply Kubernetes Manifests
-      kubernetes.core.k8s:
+    - name: Ensure Kubernetes manifests are present
+      stat:
+        path: "{{ item }}"
+      loop: "{{ k8s_manifests }}"
+      register: manifest_stats
+
+    - name: Fail if any manifest is missing
+      fail:
+        msg: "Missing manifest: {{ item.stat.path }}"
+      when: not item.stat.exists
+      loop: "{{ manifest_stats.results }}"
+
+    - name: Apply Kubernetes manifests
+      k8s:
         state: present
-        src: "{{ item }}"
-      loop:
-        - ../k8s/deployment.yml
-        - ../k8s/service.yml
+        definition: "{{ lookup('file', item) }}"
+      loop: "{{ k8s_manifests }}"
+      register: apply_results
+      retries: 2
+      delay: 3
+      until: apply_results is succeeded
+
+    - name: Wait for deployment rollout to finish
+      k8s_info:
+        kind: Deployment
+        namespace: default
+        name: automatisation-app
+      register: deployment_info
+
+    - name: Wait for pods to be ready
+      wait_for:
+        timeout: 120
+      when: deployment_info.resources | length > 0
+
+    - name: Show apply results
+      debug:
+        var: apply_results
 

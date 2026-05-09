@@ -1,11 +1,15 @@
-FROM maven:3.8.4-openjdk-17-slim AS build
-COPY . /app
-WORKDIR /app
-RUN mvn clean package -DskipTests
+# Use a stable Java 17 runtime
+FROM eclipse-temurin:17-jdk-jammy
 
-# Run stage
-FROM openjdk:17-jdk-slim
+# Create app directory
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+
+# Copy the packaged jar produced by Maven
+COPY target/*.jar app.jar
+
+# Expose the application port
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# Run the application
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+
