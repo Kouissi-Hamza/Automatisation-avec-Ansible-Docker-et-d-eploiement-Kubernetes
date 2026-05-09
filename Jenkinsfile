@@ -47,15 +47,18 @@ pipeline {
         sh 'ansible-playbook -i localhost, -c local playbooks/deploy.yml'
       }
     }
+
+    stage('Cleanup') {
+      steps {
+        // run logout inside the agent workspace so FilePath exists
+        sh 'docker logout || true'
+      }
+    }
   }
 
   post {
     always {
-      // ensure this runs inside a node/workspace so sh has FilePath
-      node {
-        // safe logout; if docker not available this will not fail the post
-        sh 'docker logout || true'
-      }
+      echo 'Pipeline finished'
     }
   }
 }
