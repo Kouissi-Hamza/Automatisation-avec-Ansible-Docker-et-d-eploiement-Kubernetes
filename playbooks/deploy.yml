@@ -1,48 +1,26 @@
-- name: Deploy application to Kubernetes
-  hosts: localhost
-  connection: local
-  gather_facts: false
-  vars:
-    k8s_manifests:
-      - k8s/deployment.yml
-      - k8s/service.yml
-
+---
+- hosts: localhost
+  gather_facts: no
   tasks:
-    - name: Ensure Kubernetes manifests are present
+    - name: Check if manifests exist
       stat:
         path: "{{ item }}"
-      loop: "{{ k8s_manifests }}"
-      register: manifest_stats
+      register: manifest_stat
+      loop:
+        - k8s/deployment.yml
+        - k8s/service.yml
 
     - name: Fail if any manifest is missing
       fail:
-        msg: "Missing manifest: {{ item.stat.path }}"
+        msg: "Missing manifest: {{ item.invocation.module_args.path }}"
       when: not item.stat.exists
-      loop: "{{ manifest_stats.results }}"
+      loop: "{{ manifest_stat.results }}"
 
     - name: Apply Kubernetes manifests
-      k8s:
+      community.kubernetes.k8s:
         state: present
-        definition: "{{ lookup('file', item) }}"
-      loop: "{{ k8s_manifests }}"
-      register: apply_results
-      retries: 2
-      delay: 3
-      until: apply_results is succeeded
-
-    - name: Wait for deployment rollout to finish
-      k8s_info:
-        kind: Deployment
-        namespace: default
-        name: automatisation-app
-      register: deployment_info
-
-    - name: Wait for pods to be ready
-      wait_for:
-        timeout: 120
-      when: deployment_info.resources | length > 0
-
-    - name: Show apply results
-      debug:
-        var: apply_results
+        src: "{{ item }}"
+      loop:
+        - k8s/deployment.yml
+        - k8s/service.yml
 
