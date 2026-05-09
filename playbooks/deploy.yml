@@ -1,20 +1,13 @@
-- name: Deploy app to kind cluster
+---
+- name: Deploy Maven App to Kubernetes
   hosts: localhost
   connection: local
-  gather_facts: false
-  vars:
-    k8s_manifest_dir: "./k8s"
   tasks:
-    - name: Ensure kubectl can access cluster
-      command: kubectl get nodes
-      register: kubectl_nodes
-      failed_when: kubectl_nodes.rc != 0
-      changed_when: false
+    - name: Apply Kubernetes Manifests
+      kubernetes.core.k8s:
+        state: present
+        src: "{{ item }}"
+      loop:
+        - ../k8s/deployment.yml
+        - ../k8s/service.yml
 
-    - name: Apply Kubernetes manifests
-      command: kubectl apply -f {{ k8s_manifest_dir }}
-      register: apply_out
-
-    - name: Show apply output
-      debug:
-        var: apply_out.stdout_lines

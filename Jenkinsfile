@@ -1,64 +1,42 @@
 pipeline {
-  agent {
-    docker {
-      image 'maven:3.9.4-eclipse-temurin-17'
-      args '-v /var/run/docker.sock:/var/run/docker.sock'
-    }
-  }
-
-  environment {
-    IMAGE = "p4vl1n/automatisation_avec_ansible"
-    TAG = "v1"
-  }
-
-  stages {
-    stage('Checkout') {
-      steps {
-        git url: 'https://github.com/Kouissi-Hamza/Automatisation-avec-Ansible-Docker-et-d-eploiement-Kubernetes.git', branch: 'main'
-      }
+    agent any
+    
+    environment {
+        DOCKER_HUB_USER = "p4vl1n"
+        IMAGE_NAME = "automatisation_avec_ansible"
+        IMAGE_TAG = "v1"
+        DOCKER_CREDENTIALS_ID = "docker-hub-credentials" // Match your Jenkins Credential ID
     }
 
-    stage('Build and Test') {
-      steps {
-        sh 'mvn -B -DskipTests=false clean package'
-      }
-    }
-
-    stage('Build image') {
-      steps {
-        sh "docker build -t ${IMAGE}:${TAG} ."
-        sh "docker tag ${IMAGE}:${TAG} ${IMAGE}:latest"
-      }
-    }
-
-    stage('Push to Docker Hub') {
-      steps {
-        script {
-          docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-creds') {
-            sh "docker push ${IMAGE}:${TAG}"
-            sh "docker push ${IMAGE}:latest"
-          }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
         }
-      }
-    }
 
-    stage('Deploy to Kubernetes') {
-      steps {
-        sh 'ansible-playbook -i localhost, -c local playbooks/deploy.yml'
-      }
-    }
+        stage('Build Artifact') {
+            steps {
+                sh 'mvn clean package -DskipTests'
+            }
+        }
 
-    stage('Cleanup') {
-      steps {
-        // run logout inside the agent workspace so FilePath exists
-        sh 'docker logout || true'
-      }
-    }
-  }
+        stage('Docker Build & Push') {
+            steps {
+                script {
+                    docker.withRegistry('', DOCKER_CREDENTIALS_ID) {
+                        def customImage = docker.build("${DOCKER_HUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}")
+                        customImage.push()
+                        customImage.push("latest")
+                    }
+                }
+            }
+        }
 
-  post {
-    always {
-      echo 'Pipeline finished'
+        stage('Ansible Deploy') {
+            steps {
+                sh 'ansible-playbook playbooks/deploy.yml'
+            }
+        }
     }
-  }
 }
