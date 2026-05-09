@@ -5,12 +5,11 @@ pipeline {
     IMAGE = "p4vl1n/automatisation_avec_ansible"
     TAG = "v1"
     DOCKERHUB_CREDENTIALS = "dockerhub-creds"
-
+    KUBECONFIG_FILE_ID = "kubeconfig-file" // Secret file credential ID
   }
 
   options {
     timestamps()
-    ansiColor('xterm')
     buildDiscarder(logRotator(numToKeepStr: '10'))
   }
 
@@ -53,23 +52,13 @@ pipeline {
     stage('Deploy to Kubernetes') {
       steps {
         script {
-          // If you store kubeconfig as a Jenkins secret text credential, write it to a file
-          withCredentials([string(credentialsId: "${KUBECONFIG_CREDENTIAL}", variable: 'KUBECONFIG_CONTENT')]) {
+          withCredentials([file(credentialsId: "${KUBECONFIG_FILE_ID}", variable: 'KUBECONFIG_FILE')]) {
             sh '''
-              if [ -n "$KUBECONFIG_CONTENT" ]; then
-                mkdir -p $WORKSPACE/.kube
-                echo "$KUBECONFIG_CONTENT" > $WORKSPACE/.kube/config
-                export KUBECONFIG=$WORKSPACE/.kube/config
-              fi
+              export KUBECONFIG="$KUBECONFIG_FILE"
+              echo "Using kubeconfig at $KUBECONFIG"
               ansible-playbook -i localhost, -c local playbooks/deploy.yml --verbose
             '''
           }
-          // If you don't use kubeconfig credential, run directly:
-          sh '''
-            if [ -z "$KUBECONFIG_CONTENT" ]; then
-              ansible-playbook -i localhost, -c local playbooks/deploy.yml --verbose
-            fi
-          '''
         }
       }
     }
