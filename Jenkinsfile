@@ -5,7 +5,7 @@ pipeline {
     IMAGE = "p4vl1n/automatisation_avec_ansible"
     TAG = "v1"
     DOCKERHUB_CREDENTIALS = "dockerhub-creds"
-    KUBECONFIG_FILE_ID = "kubeconfig-file" // Secret file credential ID
+    KUBECONFIG_FILE_ID = "kubeconfig-file"
   }
 
   options {
@@ -31,6 +31,14 @@ pipeline {
       }
     }
 
+    stage('Docker Login') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+          sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
+        }
+      }
+    }
+
     stage('Build image') {
       steps {
         sh "docker build -t ${IMAGE}:${TAG} ."
@@ -40,12 +48,8 @@ pipeline {
 
     stage('Push to Docker Hub') {
       steps {
-        script {
-          docker.withRegistry('https://registry.hub.docker.com', "${DOCKERHUB_CREDENTIALS}") {
-            sh "docker push ${IMAGE}:${TAG}"
-            sh "docker push ${IMAGE}:latest"
-          }
-        }
+        sh "docker push ${IMAGE}:${TAG}"
+        sh "docker push ${IMAGE}:latest"
       }
     }
 
