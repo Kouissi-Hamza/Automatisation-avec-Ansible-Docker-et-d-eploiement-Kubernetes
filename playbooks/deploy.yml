@@ -4,11 +4,11 @@
   tasks:
     - name: Check if manifests exist
       stat:
-        path: "{{ item }}"
+        path: "{{ playbook_dir }}/../k8s/{{ item }}"
       register: manifest_stat
       loop:
-        - k8s/deployment.yml
-        - k8s/service.yml
+        - deployment.yml
+        - service.yml
 
     - name: Fail if any manifest is missing
       fail:
@@ -17,10 +17,10 @@
       loop: "{{ manifest_stat.results }}"
 
     - name: Apply Kubernetes manifests
-      community.kubernetes.k8s:
+      kubernetes.core.k8s:
         state: present
-        src: "{{ item }}"
+        definition: "{{ lookup('file', playbook_dir + '/../k8s/' + item) | from_yaml }}"
       loop:
-        - k8s/deployment.yml
-        - k8s/service.yml
+        - deployment.yml
+        - service.yml
 

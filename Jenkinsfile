@@ -59,6 +59,8 @@ pipeline {
           withCredentials([file(credentialsId: "${KUBECONFIG_FILE_ID}", variable: 'KUBECONFIG_FILE')]) {
             sh '''
               export KUBECONFIG="$KUBECONFIG_FILE"
+              export PYTHONPATH=$PYTHONPATH:/usr/local/lib/python3.10/dist-packages:/usr/local/lib/python3.11/dist-packages:/usr/local/lib/python3.12/dist-packages
+              export ANSIBLE_COLLECTIONS_PATH=/root/.ansible/collections:/usr/share/ansible/collections
               echo "Using kubeconfig at $KUBECONFIG"
               ansible-playbook -i localhost, -c local playbooks/deploy.yml --verbose
             '''
