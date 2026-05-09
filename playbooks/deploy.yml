@@ -19,6 +19,7 @@
     - name: Apply Kubernetes manifests
       kubernetes.core.k8s:
         state: present
+        validate_certs: no
         definition: "{{ lookup('file', playbook_dir + '/../k8s/' + item) | from_yaml }}"
       loop:
         - deployment.yml
