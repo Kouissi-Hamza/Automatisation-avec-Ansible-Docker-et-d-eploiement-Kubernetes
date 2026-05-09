@@ -5,7 +5,7 @@ pipeline {
         DOCKER_HUB_USER = "p4vl1n"
         IMAGE_NAME = "automatisation_avec_ansible"
         IMAGE_TAG = "v1"
-        DOCKER_CREDENTIALS_ID = "docker-hub-credentials" // Match your Jenkins Credential ID
+        DOCKER_CREDENTIALS_ID = "dockerhub-creds" // Match your Jenkins Credential ID
     }
 
     stages {
