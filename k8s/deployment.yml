@@ -1,44 +1,35 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: automatisation-app
+  name: automatisation-deployment
+  namespace: default
   labels:
-    app: automatisation-app
+    app: automatisation
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
-      app: automatisation-app
+      app: automatisation
   template:
     metadata:
       labels:
-        app: automatisation-app
+        app: automatisation
     spec:
       containers:
-        - name: automatisation-app
+        - name: automatisation-container
           image: p4vl1n/automatisation_avec_ansible:v1
-          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            failureThreshold: 3
           livenessProbe:
             httpGet:
-              path: /
+              path: /healthz
               port: 8080
             initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
             periodSeconds: 10
-            failureThreshold: 3
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "128Mi"
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
 
